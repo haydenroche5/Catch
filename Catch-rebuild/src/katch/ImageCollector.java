@@ -26,12 +26,12 @@ public class ImageCollector {
 		}
 		Document photoPage;
 		if (isUser) {
-			Document idPage = Jsoup.connect("https://api.flickr.com/services/rest/?&method=flickr.people.findBysearch&api_key=" + 
-					this.apiKey + "&search=" + search).get();
+			Document idPage = Jsoup.connect("https://api.flickr.com/services/rest/?&method=flickr.people.findByUsername&api_key=" + 
+					this.apiKey + "&username=" + search).get();
 			Elements pageElements = idPage.getElementsByAttribute("id");
 			Element userElement = pageElements.first();
 			String nsid = userElement.id();
-			photoPage = Jsoup.connect("https://api.flickr.com/services/rest/?&method=flickr.people.getPublicPhotos&api_key=3308c011a950366105f3dfd4a0d4b324&user_id=" + 
+			photoPage = Jsoup.connect("https://api.flickr.com/services/rest/?&method=flickr.people.getPublicPhotos&api_key=" + this.apiKey + "&user_id=" + 
 					nsid).get();
 		}
 		else {

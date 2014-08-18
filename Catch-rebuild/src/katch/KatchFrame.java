@@ -120,6 +120,9 @@ public class KatchFrame extends JFrame {
 								matchPane.repaint();
 								System.out.println("Hey, a match!");
 							}
+							else {
+								System.out.println("Nope.");
+							}
 						}
 					} catch (IOException e1) {
 						e1.printStackTrace();
