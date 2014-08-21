@@ -1,11 +1,15 @@
 package katch;
 
 import java.awt.EventQueue;
+import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+
+import javax.imageio.ImageIO;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -39,7 +43,7 @@ public class KatchFrame extends JFrame {
 	public KatchFrame() {
 		this.matchedUrls = new DefaultListModel<URL>();
 		setDefaultCloseOperation(3);
-		setBounds(100, 100, 632, 425);
+		setBounds(100, 100, 1100, 700);
 		this.contentPane = new JPanel();
 		this.contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(this.contentPane);
@@ -79,6 +83,10 @@ public class KatchFrame extends JFrame {
 		JLabel lblMatches = new JLabel("Matches");
 		lblMatches.setBounds(154, 73, 61, 16);
 		this.contentPane.add(lblMatches);
+		
+		JPanel imagePanel = new JPanel();
+		imagePanel.setBounds(606, 91, 476, 500);
+		this.contentPane.add(imagePanel);
 
 		JList matchList = new JList();
 		matchPane.setViewportView(matchList);
@@ -127,6 +135,13 @@ public class KatchFrame extends JFrame {
 					} catch (IOException e1) {
 						e1.printStackTrace();
 					}
+				}
+				try {
+					BufferedImage picToDisplay = ImageIO.read(matchedUrls.elementAt(0));
+					Graphics2D displayGraphics = picToDisplay.createGraphics();
+					imagePanel.paint(displayGraphics);
+				} catch (IOException e1) {
+					e1.printStackTrace();
 				}
 			}
 		});

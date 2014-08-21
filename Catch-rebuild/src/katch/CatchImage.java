@@ -18,7 +18,8 @@ public class CatchImage {
 	public CatchImage(String url) throws MalformedURLException {
 		this.imageUrl = new URL(url);
 	}
-
+	
+	//deprecated
 	private double[] processImage() throws IOException {
 		BufferedImage seedImage = ImageIO.read(imageUrl);
 		height = seedImage.getHeight();
@@ -51,43 +52,45 @@ public class CatchImage {
 		width = seedImage.getWidth();
 		int totalPix = width*height;
 
-		//these bounds come from the Wikiedpia page "Web colors"
+		//these hue bounds come from WorkWithColor.com
 		ArrayList<int[]> colorBounds = new ArrayList<int[]>();
 
-		int[] redOrangeHues = { 11, 20 };
+		int[] redOrangeHues = { 11, 20 }; //0
 		colorBounds.add(redOrangeHues);
-		int[] orangeBrownHues = { 21, 40 };
+		int[] orangeBrownHues = { 21, 40 }; //1
 		colorBounds.add(orangeBrownHues);
-		int[] orangeYellowHues = { 41, 50 };
+		int[] orangeYellowHues = { 41, 50 }; //2
 		colorBounds.add(orangeYellowHues);
-		int[] yellowHues = { 51, 60 };
+		int[] yellowHues = { 51, 60 }; //3
 		colorBounds.add(yellowHues);
-		int[] yellowGreenHues = { 61, 80 };
+		int[] yellowGreenHues = { 61, 80 }; //4
 		colorBounds.add(yellowGreenHues);
-		int[] greenHues = { 81, 140 };
+		int[] greenHues = { 81, 140 }; //5
 		colorBounds.add(greenHues);
-		int[] greenCyanHues = { 141, 169 };
+		int[] greenCyanHues = { 141, 169 }; //6
 		colorBounds.add(greenCyanHues);
-		int[] cyanHues = { 170, 200 };
+		int[] cyanHues = { 170, 200 }; //7
 		colorBounds.add(cyanHues);
-		int[] cyanBlueHues = { 201, 220 };
+		int[] cyanBlueHues = { 201, 220 }; //8
 		colorBounds.add(cyanBlueHues);
-		int[] blueHues = { 221, 240 };
+		int[] blueHues = { 221, 240 }; //9
 		colorBounds.add(blueHues);
-		int[] blueMagentaHues = { 241, 280 };
+		int[] blueMagentaHues = { 241, 280 }; //10
 		colorBounds.add(blueMagentaHues);
-		int[] magentaHues = { 281, 320 };
+		int[] magentaHues = { 281, 320 }; //11
 		colorBounds.add(magentaHues);
-		int[] magentaPinkHues = { 321, 330 };
+		int[] magentaPinkHues = { 321, 330 }; //12
 		colorBounds.add(magentaPinkHues);
-		int[] pinkHues = { 331, 345 };
+		int[] pinkHues = { 331, 345 }; //13
 		colorBounds.add(pinkHues);
-		int[] pinkRedHues = { 346, 355 };
+		int[] pinkRedHues = { 346, 355 }; //14
 		colorBounds.add(pinkRedHues);
-		int[] redHues = { 355, 10 };
+		int[] redHues = { 355, 10 }; //15
 		colorBounds.add(redHues);
 
-		int[] counts = new int[colorBounds.size()];
+		//white = 16, black = 17
+
+		int[] counts = new int[colorBounds.size() + 2];
 		skip = 2;
 		if(totalPix > 640000) {
 			skip = 3;
@@ -101,85 +104,102 @@ public class CatchImage {
 				float[] hsb = new float[3];
 				Color.RGBtoHSB(red, green, blue, hsb);
 				hsb[0] = hsb[0] * 360;
-				hsb[1] = hsb[1] * 360;
-				hsb[2] = hsb[2] * 360;
-				for(int i = 0; i < colorBounds.size() - 1; i++) {
-					if(colorBounds.get(i)[0] <= hsb[0] && hsb[0] <= colorBounds.get(i)[1]) {
-						counts[i]++;
+				hsb[1] = hsb[1] * 100;
+				hsb[2] = hsb[2] * 100;
+				boolean foundIt = false;
+				//if the brightness is less than or equal to 15, the color is black
+				if(hsb[2] <= 15) {
+					counts[17]++;
+					foundIt = true;
+				}
+				//if saturation is 0 and brightness is 100, the color is white
+				else if(hsb[1] == 0 && hsb[2] == 100 && !foundIt) {
+					counts[16]++;
+					foundIt = true;
+				}
+				//all other colors are checked for here
+				if(!foundIt) {
+					for(int i = 0; i < colorBounds.size() - 1; i++) {
+						if(colorBounds.get(i)[0] <= hsb[0] && hsb[0] <= colorBounds.get(i)[1]) {
+							counts[i]++;
+							foundIt = true;
+						}
 					}
 				}
-				if((redHues[0] <= hsb[0]) || (hsb[0] <= redHues[1])) {
+				//red has to be checked for separately
+				if(!foundIt && ((redHues[0] <= hsb[0]) || (hsb[0] <= redHues[1]))) {
 					counts[colorBounds.size() - 1]++;
+					foundIt = true;
+				}
 			}
 		}
+		return counts;
 	}
-	return counts;
-}
 
-public double[] calculateStandDev(double[] seedAverages) throws IOException {
-	BufferedImage seedImage = ImageIO.read(this.imageUrl);
-	height = seedImage.getHeight();
-	width = seedImage.getWidth();
+	//deprecated
+	public double[] calculateStandDev(double[] seedAverages) throws IOException {
+		BufferedImage seedImage = ImageIO.read(this.imageUrl);
+		height = seedImage.getHeight();
+		width = seedImage.getWidth();
 
-	int redVariance = 0;
-	int greenVariance = 0;
-	int blueVariance = 0;
-	int totalPix = width * height;
-	double divisor = totalPix - 1;
+		int redVariance = 0;
+		int greenVariance = 0;
+		int blueVariance = 0;
+		int totalPix = width * height;
+		double divisor = totalPix - 1;
 
-	for (int y = 0; y < height; y++) {
-		for (int x = 0; x < width; x++) {
-			Color pixelColor = new Color(seedImage.getRGB(x, y));
-			redVariance += Math.pow(pixelColor.getRed() - seedAverages[0], 2.0);
-			greenVariance += Math.pow(pixelColor.getGreen() - seedAverages[1], 2.0);
-			blueVariance += Math.pow(pixelColor.getBlue() - seedAverages[2], 2.0);
+		for (int y = 0; y < height; y++) {
+			for (int x = 0; x < width; x++) {
+				Color pixelColor = new Color(seedImage.getRGB(x, y));
+				redVariance += Math.pow(pixelColor.getRed() - seedAverages[0], 2.0);
+				greenVariance += Math.pow(pixelColor.getGreen() - seedAverages[1], 2.0);
+				blueVariance += Math.pow(pixelColor.getBlue() - seedAverages[2], 2.0);
+			}
 		}
+
+		double standDevRed = Math.sqrt(redVariance / divisor);
+		double standDevGreen = Math.sqrt(greenVariance / divisor);
+		double standDevBlue = Math.sqrt(blueVariance / divisor);
+		double[] standDevs = { standDevRed, standDevGreen, standDevBlue };
+		return standDevs;
 	}
 
-	double standDevRed = Math.sqrt(redVariance / divisor);
-	double standDevGreen = Math.sqrt(greenVariance / divisor);
-	double standDevBlue = Math.sqrt(blueVariance / divisor);
-	double[] standDevs = { standDevRed, standDevGreen, standDevBlue };
-	return standDevs;
-}
-
-public int findMax(int[] modes) throws IOException {
-	int max = 0;
-	int indexOfMax = 0;
-	for(int i = 0; i < modes.length; i++) {
-		if(modes[i] > max) {
-			max = modes[i];
-			indexOfMax = i;
+	public int findMax(int[] modes) throws IOException {
+		int max = 0;
+		int indexOfMax = 0;
+		for(int i = 0; i < modes.length; i++) {
+			if(modes[i] > max) {
+				max = modes[i];
+				indexOfMax = i;
+			}
 		}
+		//if the dominant color is pure white (saturation of 0, brightness of 100), use the second most frequent color
+		//as the max
+		if(indexOfMax == 16) {
+			modes[16] = 0;
+			indexOfMax = findMax(modes);
+		}
+		return indexOfMax;
 	}
-	return indexOfMax;
-}
 
-public int findSecondLargest(int[] modes) throws IOException {
-	int maxIndex = findMax(modes);
-	modes[maxIndex] = 0;
-	int secondLargestIndex = findMax(modes);
-	return secondLargestIndex;
-}
-
-public boolean compareImages(CatchImage otherPhoto) throws IOException {
-	boolean isMatch = false;
-	if (this.findMax(this.calculateColorModes()) == otherPhoto.findMax(otherPhoto.calculateColorModes())) {
-		isMatch = true;
+	public boolean compareImages(CatchImage otherPhoto) throws IOException {
+		boolean isMatch = false;
+		if (this.findMax(this.calculateColorModes()) == otherPhoto.findMax(otherPhoto.calculateColorModes())) {
+			isMatch = true;
+		}
+		return isMatch;
 	}
-	return isMatch;
-}
 
-public URL getImageURL() {
-	return this.imageUrl;
-}
-
-public static void main(String[] args) throws IOException {
-	CatchImage test = new CatchImage("https://farm6.staticflickr.com/5585/14984978262_35cac9c358.jpg");
-	int[] modes = test.calculateColorModes();
-	for(int i = 0; i < modes.length; i++) {
-		System.out.println(modes[i]);
+	public URL getImageURL() {
+		return this.imageUrl;
 	}
-	System.out.println("MAX: " + test.findMax(test.calculateColorModes()));
-}
+
+	public static void main(String[] args) throws IOException {
+		CatchImage test = new CatchImage("http://zoxkitchen.com/wp-content/uploads/2014/08/tomato.jpg");
+		int[] modes = test.calculateColorModes();
+		for(int i = 0; i < modes.length; i++) {
+			System.out.println(modes[i]);
+		}
+		System.out.println("MAX: " + test.findMax(modes));
+	}
 }
