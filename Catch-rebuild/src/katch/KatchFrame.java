@@ -39,7 +39,7 @@ public class KatchFrame extends JFrame {
 	public KatchFrame() {
 		this.matchedUrls = new DefaultListModel<URL>();
 		setDefaultCloseOperation(3);
-		setBounds(100, 100, 610, 310);
+		setBounds(100, 100, 632, 425);
 		this.contentPane = new JPanel();
 		this.contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(this.contentPane);
@@ -112,7 +112,7 @@ public class KatchFrame extends JFrame {
 							compPhotos.add(photoToCompare);
 						}
 						for (int i = 0; i < compPhotos.size(); i++) {
-							boolean theyMatch = seedImage.compareImages((CatchImage)compPhotos.get(i));
+							boolean theyMatch = seedImage.compareImages(compPhotos.get(i));
 							if (theyMatch) {
 								matchedUrls.addElement(((CatchImage)compPhotos.get(i)).getImageURL());
 								matchList.setModel(matchedUrls);
