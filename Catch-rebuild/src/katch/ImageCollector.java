@@ -21,7 +21,7 @@ public class ImageCollector {
 	public ArrayList<String> collectImages(String search, boolean isUser) throws IOException {
 		Pattern space = Pattern.compile("\\s");
 		Matcher spaceMatcher = space.matcher(search);
-		while (spaceMatcher.find()){
+		while (spaceMatcher.find()) {
 			search = spaceMatcher.replaceAll("%20");
 		}
 		Document photoPage;

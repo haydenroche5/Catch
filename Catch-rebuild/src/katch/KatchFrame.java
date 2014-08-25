@@ -124,6 +124,7 @@ public class KatchFrame extends JFrame {
 							if (theyMatch) {
 								matchedUrls.addElement(((CatchImage)compPhotos.get(i)).getImageURL());
 								matchList.setModel(matchedUrls);
+								//this doesn't update in real time still
 								matchPane.validate();
 								matchPane.repaint();
 								System.out.println("Hey, a match!");
@@ -137,9 +138,9 @@ public class KatchFrame extends JFrame {
 					}
 				}
 				try {
-					BufferedImage picToDisplay = ImageIO.read(matchedUrls.elementAt(0));
-					Graphics2D displayGraphics = picToDisplay.createGraphics();
-					imagePanel.paint(displayGraphics);
+					URL seedUrl = new URL(seedField.getText());
+					BufferedImage picToDisplay = ImageIO.read(seedUrl);
+					
 				} catch (IOException e1) {
 					e1.printStackTrace();
 				}
