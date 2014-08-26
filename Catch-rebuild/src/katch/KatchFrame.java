@@ -2,6 +2,7 @@ package katch;
 
 import java.awt.EventQueue;
 import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
@@ -11,6 +12,7 @@ import java.util.ArrayList;
 
 import javax.imageio.ImageIO;
 import javax.swing.DefaultListModel;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -20,12 +22,15 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 
+import net.coobird.thumbnailator.Thumbnailator;
+
 public class KatchFrame extends JFrame {
 	private JPanel contentPane;
 	private JTextField seedField;
 	private JTextField userField;
 	private JTextField searchField;
 	private DefaultListModel<URL> matchedUrls;
+	private JTextField textField;
 
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
@@ -39,58 +44,47 @@ public class KatchFrame extends JFrame {
 			}
 		});
 	}
-	
+
 	public KatchFrame() {
-		this.matchedUrls = new DefaultListModel<URL>();
+		matchedUrls = new DefaultListModel<URL>();
 		setDefaultCloseOperation(3);
-		setBounds(100, 100, 1100, 700);
-		this.contentPane = new JPanel();
-		this.contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
-		setContentPane(this.contentPane);
-		this.contentPane.setLayout(null);
+		setBounds(25, 25, 450, 700);
+		contentPane = new JPanel();
+		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
+		setContentPane(contentPane);
+		contentPane.setLayout(null);
 
-		this.seedField = new JTextField();
-		this.seedField.setBounds(6, 37, 438, 28);
-		this.contentPane.add(this.seedField);
-		this.seedField.setColumns(10);
+		seedField = new JTextField();
+		seedField.setBounds(6, 152, 438, 28);
+		contentPane.add(seedField);
+		seedField.setColumns(10);
 
-		this.userField = new JTextField();
-		this.userField.setColumns(10);
-		this.userField.setBounds(6, 91, 134, 28);
-		this.contentPane.add(this.userField);
+		userField = new JTextField();
+		userField.setColumns(10);
+		userField.setBounds(6, 91, 134, 28);
+		contentPane.add(userField);
 
-		this.searchField = new JTextField();
-		this.searchField.setBounds(6, 145, 134, 28);
-		this.contentPane.add(this.searchField);
-		this.searchField.setColumns(10);
+		searchField = new JTextField();
+		searchField.setBounds(310, 91, 134, 28);
+		contentPane.add(searchField);
+		searchField.setColumns(10);
 
 		JLabel lblNewLabel_1 = new JLabel("Seed URL");
 		lblNewLabel_1.setBounds(10, 19, 61, 16);
-		this.contentPane.add(lblNewLabel_1);
+		contentPane.add(lblNewLabel_1);
 
 		JLabel lblNewLabel = new JLabel("Username");
 		lblNewLabel.setBounds(10, 73, 72, 16);
-		this.contentPane.add(lblNewLabel);
+		contentPane.add(lblNewLabel);
 
 		JLabel lblSearch = new JLabel("Search");
-		lblSearch.setBounds(10, 127, 61, 16);
-		this.contentPane.add(lblSearch);
+		lblSearch.setBounds(313, 73, 61, 16);
+		contentPane.add(lblSearch);
 
-		final JScrollPane matchPane = new JScrollPane();
-		matchPane.setBounds(152, 91, 442, 181);
-		this.contentPane.add(matchPane);
-
-		JLabel lblMatches = new JLabel("Matches");
-		lblMatches.setBounds(154, 73, 61, 16);
-		this.contentPane.add(lblMatches);
+		JLabel selectedMatch = new JLabel("Selected Match");
+		selectedMatch.setBounds(6, 131, 100, 16);
+		contentPane.add(selectedMatch);
 		
-		JPanel imagePanel = new JPanel();
-		imagePanel.setBounds(606, 91, 476, 500);
-		this.contentPane.add(imagePanel);
-
-		JList matchList = new JList();
-		matchPane.setViewportView(matchList);
-
 		JButton btnCatch = new JButton("Catch");
 		btnCatch.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -123,10 +117,6 @@ public class KatchFrame extends JFrame {
 							boolean theyMatch = seedImage.compareImages(compPhotos.get(i));
 							if (theyMatch) {
 								matchedUrls.addElement(((CatchImage)compPhotos.get(i)).getImageURL());
-								matchList.setModel(matchedUrls);
-								//this doesn't update in real time still
-								matchPane.validate();
-								matchPane.repaint();
 								System.out.println("Hey, a match!");
 							}
 							else {
@@ -138,15 +128,50 @@ public class KatchFrame extends JFrame {
 					}
 				}
 				try {
-					URL seedUrl = new URL(seedField.getText());
-					BufferedImage picToDisplay = ImageIO.read(seedUrl);
-					
-				} catch (IOException e1) {
+					int width = 0;
+					int height = 0;
+					int x = 56;
+					int y = 0;
+					int row = 0;
+					for(int i = 0; i < matchedUrls.size(); i++) {
+						URL matchUrl = matchedUrls.get(i);
+						BufferedImage match = ImageIO.read(matchUrl);
+						match = Thumbnailator.createThumbnail(match, 75, 75);
+						JButton thumbButton = new JButton(new ImageIcon(match));
+						x += width;
+						y = 131 + row;
+						if((i % 4) == 0 && i != 0) {
+							row += 85;
+							x = 56;
+						}
+						thumbButton.setBounds(x, y, 75, 75);
+						width = match.getWidth();
+						height = match.getHeight();
+						contentPane.add(thumbButton);
+						thumbButton.addActionListener(new ActionListener() {
+							public void actionPerformed(ActionEvent e) {
+								selectedMatch.setText(matchUrl.toString());
+							}
+						});
+					}
+					contentPane.validate();
+					contentPane.repaint();
+				}
+				catch (IOException e1) {
 					e1.printStackTrace();
 				}
 			}
 		});
-		btnCatch.setBounds(6, 196, 117, 29);
-		this.contentPane.add(btnCatch);
+		btnCatch.setBounds(167, 640, 116, 29);
+		contentPane.add(btnCatch);
+
+		JLabel lblOr = new JLabel("OR");
+		lblOr.setBounds(207, 97, 61, 16);
+		contentPane.add(lblOr);
+		
+		textField = new JTextField();
+		textField.setColumns(10);
+		textField.setBounds(6, 36, 438, 28);
+		contentPane.add(textField);
 	}
 }
