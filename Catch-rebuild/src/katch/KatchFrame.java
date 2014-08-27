@@ -30,7 +30,10 @@ public class KatchFrame extends JFrame {
 	private JTextField userField;
 	private JTextField searchField;
 	private DefaultListModel<URL> matchedUrls;
-	private JTextField textField;
+	private JTextField selectedMatchField;
+	private int pageStart;
+	private int pageLimit;
+	private ArrayList<JButton> picButtons;
 
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
@@ -46,6 +49,7 @@ public class KatchFrame extends JFrame {
 	}
 
 	public KatchFrame() {
+		picButtons = new ArrayList<JButton>();
 		matchedUrls = new DefaultListModel<URL>();
 		setDefaultCloseOperation(3);
 		setBounds(25, 25, 450, 700);
@@ -55,7 +59,7 @@ public class KatchFrame extends JFrame {
 		contentPane.setLayout(null);
 
 		seedField = new JTextField();
-		seedField.setBounds(6, 152, 438, 28);
+		seedField.setBounds(6, 35, 438, 28);
 		contentPane.add(seedField);
 		seedField.setColumns(10);
 
@@ -82,12 +86,24 @@ public class KatchFrame extends JFrame {
 		contentPane.add(lblSearch);
 
 		JLabel selectedMatch = new JLabel("Selected Match");
-		selectedMatch.setBounds(6, 131, 100, 16);
+		selectedMatch.setBounds(9, 131, 100, 16);
 		contentPane.add(selectedMatch);
-		
-		JButton btnCatch = new JButton("Catch");
-		btnCatch.addActionListener(new ActionListener() {
+
+		JLabel lblOr = new JLabel("OR");
+		lblOr.setBounds(207, 97, 61, 16);
+		contentPane.add(lblOr);
+
+		selectedMatchField = new JTextField();
+		selectedMatchField.setColumns(10);
+		selectedMatchField.setBounds(6, 149, 438, 28);
+		contentPane.add(selectedMatchField);
+
+		JButton btnKatch = new JButton("Katch");
+		btnKatch.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				for(int i = 0; i < picButtons.size(); i++) {
+					contentPane.remove(picButtons.get(i));
+				}
 				matchedUrls.clear();
 				String search = userField.getText();
 				boolean isUser = true;
@@ -113,11 +129,14 @@ public class KatchFrame extends JFrame {
 							CatchImage photoToCompare = new CatchImage((String)compUrls.get(i));
 							compPhotos.add(photoToCompare);
 						}
+						//REMOVE this variable after testing complete
+						int count = 0;
 						for (int i = 0; i < compPhotos.size(); i++) {
 							boolean theyMatch = seedImage.compareImages(compPhotos.get(i));
 							if (theyMatch) {
+								count++;
 								matchedUrls.addElement(((CatchImage)compPhotos.get(i)).getImageURL());
-								System.out.println("Hey, a match!");
+								System.out.println("Hey, a match! (" + count + ")");
 							}
 							else {
 								System.out.println("Nope.");
@@ -128,29 +147,60 @@ public class KatchFrame extends JFrame {
 					}
 				}
 				try {
+					ArrayList<JButton> picButtons = new ArrayList<JButton>();
 					int width = 0;
 					int height = 0;
-					int x = 56;
+					int x = 35;
 					int y = 0;
 					int row = 0;
-					for(int i = 0; i < matchedUrls.size(); i++) {
+					pageLimit = matchedUrls.size();
+					if(matchedUrls.size() > 25) {
+						pageLimit = 25;
+					}
+					pageStart = 0;
+					for(int i = 0; i < pageLimit; i++) {
 						URL matchUrl = matchedUrls.get(i);
 						BufferedImage match = ImageIO.read(matchUrl);
-						match = Thumbnailator.createThumbnail(match, 75, 75);
+						match = Thumbnailator.createThumbnail(match, 55, 55);
 						JButton thumbButton = new JButton(new ImageIcon(match));
+						picButtons.add(thumbButton);
 						x += width;
-						y = 131 + row;
-						if((i % 4) == 0 && i != 0) {
+						y = 181 + row;
+						if((i % 5) == 0 && i != 0) {
 							row += 85;
-							x = 56;
+							x = 35;
 						}
 						thumbButton.setBounds(x, y, 75, 75);
-						width = match.getWidth();
+						width = 75;
 						height = match.getHeight();
 						contentPane.add(thumbButton);
+						pageStart = i;
 						thumbButton.addActionListener(new ActionListener() {
 							public void actionPerformed(ActionEvent e) {
-								selectedMatch.setText(matchUrl.toString());
+								selectedMatchField.setText(matchUrl.toString());
+							}
+						});
+					}
+					if(matchedUrls.size() > 25) {
+						JButton btnNextPage = new JButton("Next page");
+						btnNextPage.setBounds(166, 607, 117, 29);
+						contentPane.add(btnNextPage);
+						pageLimit += 25;
+						pageStart += 1;
+						btnNextPage.addActionListener(new ActionListener() {
+							public void actionPerformed(ActionEvent e) {
+								int j = 0;
+								for(int i = pageStart; i < pageLimit; i++) {
+									URL matchUrl = matchedUrls.get(i);
+									try {
+										BufferedImage match = ImageIO.read(matchUrl);
+										match = Thumbnailator.createThumbnail(match, 55, 55);
+										picButtons.get(j).setIcon(new ImageIcon(match));
+									} catch (IOException e1) {
+										e1.printStackTrace();
+									}
+									j++;
+								}
 							}
 						});
 					}
@@ -162,16 +212,7 @@ public class KatchFrame extends JFrame {
 				}
 			}
 		});
-		btnCatch.setBounds(167, 640, 116, 29);
-		contentPane.add(btnCatch);
-
-		JLabel lblOr = new JLabel("OR");
-		lblOr.setBounds(207, 97, 61, 16);
-		contentPane.add(lblOr);
-		
-		textField = new JTextField();
-		textField.setColumns(10);
-		textField.setBounds(6, 36, 438, 28);
-		contentPane.add(textField);
+		btnKatch.setBounds(167, 640, 116, 29);
+		contentPane.add(btnKatch);
 	}
 }
