@@ -1,6 +1,7 @@
 package katch;
 
 import java.awt.EventQueue;
+import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
@@ -29,11 +30,14 @@ public class KatchFrame extends JFrame {
 	private JTextField seedField;
 	private JTextField userField;
 	private JTextField searchField;
+	private JPanel displayPanel;
 	private DefaultListModel<URL> matchedUrls;
 	private JTextField selectedMatchField;
-	private int pageStart;
-	private int pageLimit;
 	private ArrayList<JButton> picButtons;
+	private int pageNumber;
+	private int startingIndex;
+	private URL matchUrl;
+	private BufferedImage match;
 
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
@@ -50,14 +54,34 @@ public class KatchFrame extends JFrame {
 
 	public KatchFrame() {
 		picButtons = new ArrayList<JButton>();
+		for(int i = 0; i < 25; i++) {
+			JButton thumbButton = new JButton();
+			picButtons.add(thumbButton);
+			picButtons.get(0).addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					selectedMatchField.setText(matchUrl.toString());
+					Graphics matchGraphics = match.getGraphics();
+					matchGraphics.drawImage(match, match.getWidth(), match.getHeight(), displayPanel);  
+					contentPane.validate();
+					contentPane.repaint();
+				}
+			});
+		}
+
+		startingIndex = 0;
+		pageNumber = 1;
 		matchedUrls = new DefaultListModel<URL>();
 		setDefaultCloseOperation(3);
-		setBounds(25, 25, 450, 700);
+		setBounds(25, 25, 1100, 700);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
 		contentPane.setLayout(null);
 
+		displayPanel = new JPanel();
+		displayPanel.setBounds(495, 35, 600, 600);
+		contentPane.add(displayPanel);
+		
 		seedField = new JTextField();
 		seedField.setBounds(6, 35, 438, 28);
 		contentPane.add(seedField);
@@ -97,6 +121,16 @@ public class KatchFrame extends JFrame {
 		selectedMatchField.setColumns(10);
 		selectedMatchField.setBounds(6, 149, 438, 28);
 		contentPane.add(selectedMatchField);
+		
+		JButton btnPrevPage = new JButton("Previous page");
+		btnPrevPage.setBounds(86, 607, 117, 29);
+		contentPane.add(btnPrevPage);
+		btnPrevPage.setVisible(false);
+		
+		JButton btnNextPage = new JButton("Next page");
+		btnNextPage.setBounds(246, 607, 117, 29);
+		contentPane.add(btnNextPage);
+		btnNextPage.setVisible(false);
 
 		JButton btnKatch = new JButton("Katch");
 		btnKatch.addActionListener(new ActionListener() {
@@ -146,73 +180,88 @@ public class KatchFrame extends JFrame {
 						e1.printStackTrace();
 					}
 				}
-				try {
-					ArrayList<JButton> picButtons = new ArrayList<JButton>();
-					int width = 0;
-					int height = 0;
-					int x = 35;
-					int y = 0;
-					int row = 0;
-					pageLimit = matchedUrls.size();
-					if(matchedUrls.size() > 25) {
-						pageLimit = 25;
-					}
-					pageStart = 0;
-					for(int i = 0; i < pageLimit; i++) {
-						URL matchUrl = matchedUrls.get(i);
-						BufferedImage match = ImageIO.read(matchUrl);
-						match = Thumbnailator.createThumbnail(match, 55, 55);
-						JButton thumbButton = new JButton(new ImageIcon(match));
-						picButtons.add(thumbButton);
-						x += width;
-						y = 181 + row;
-						if((i % 5) == 0 && i != 0) {
-							row += 85;
-							x = 35;
+				btnPrevPage.addActionListener(new ActionListener() {
+					public void actionPerformed(ActionEvent e) {
+						btnNextPage.setVisible(true);
+						int finalIndex = 0;
+						startingIndex -= 25;
+						pageNumber--;
+						for(int i = 0; i < picButtons.size(); i++) {
+							picButtons.get(i).setIcon(null);
 						}
-						thumbButton.setBounds(x, y, 75, 75);
-						width = 75;
-						height = match.getHeight();
-						contentPane.add(thumbButton);
-						pageStart = i;
-						thumbButton.addActionListener(new ActionListener() {
-							public void actionPerformed(ActionEvent e) {
-								selectedMatchField.setText(matchUrl.toString());
-							}
-						});
+						finalIndex = pageNumber * 25;
+						if(pageNumber == 1) {
+							btnPrevPage.setVisible(false);
+						}
+						try {
+							createThumbs(startingIndex, finalIndex);
+						} catch (IOException e1) {
+							e1.printStackTrace();
+						}
 					}
-					if(matchedUrls.size() > 25) {
-						JButton btnNextPage = new JButton("Next page");
-						btnNextPage.setBounds(166, 607, 117, 29);
-						contentPane.add(btnNextPage);
-						pageLimit += 25;
-						pageStart += 1;
-						btnNextPage.addActionListener(new ActionListener() {
-							public void actionPerformed(ActionEvent e) {
-								int j = 0;
-								for(int i = pageStart; i < pageLimit; i++) {
-									URL matchUrl = matchedUrls.get(i);
-									try {
-										BufferedImage match = ImageIO.read(matchUrl);
-										match = Thumbnailator.createThumbnail(match, 55, 55);
-										picButtons.get(j).setIcon(new ImageIcon(match));
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									j++;
-								}
+				});
+				try {
+					createThumbs(0, 25);
+				} catch (IOException e2) {
+					e2.printStackTrace();
+				}
+				if(matchedUrls.size() > 25) {
+					btnNextPage.setVisible(true);
+					btnNextPage.addActionListener(new ActionListener() {
+						public void actionPerformed(ActionEvent e) {
+							int finalIndex = 0;
+							startingIndex += 25;
+							pageNumber++;
+							btnPrevPage.setVisible(true);
+							for(int i = 0; i < picButtons.size(); i++) {
+								picButtons.get(i).setIcon(null);
 							}
-						});
-					}
-					contentPane.validate();
-					contentPane.repaint();
+							if((pageNumber * 25) > matchedUrls.size()) {
+								finalIndex = matchedUrls.size();
+								btnNextPage.setVisible(false);
+							}
+							else {
+								finalIndex = pageNumber * 25;
+							}
+							try {
+								createThumbs(startingIndex, finalIndex);
+							} catch (IOException e1) {
+								e1.printStackTrace();
+							}
+						}
+					});
 				}
-				catch (IOException e1) {
-					e1.printStackTrace();
-				}
+				contentPane.validate();
+				contentPane.repaint();
 			}
 		});
 		btnKatch.setBounds(167, 640, 116, 29);
 		contentPane.add(btnKatch);
+	}
+
+	public void createThumbs(int startingIndex, int finalIndex) throws IOException {
+		int width = 0;
+		int height = 0;
+		int x = 38;
+		int y = 0;
+		int row = 0;
+		int btnIndex = 0;
+		for(int i = startingIndex; i < finalIndex; i++) {
+			matchUrl = matchedUrls.get(i);
+			match = ImageIO.read(matchUrl);
+			BufferedImage matchThumb = Thumbnailator.createThumbnail(match, 55, 55);
+			picButtons.get(btnIndex).setIcon(new ImageIcon(matchThumb));
+			x += width;
+			if((i % 5) == 0 && (i % 25) != 0) {
+				row += 85;
+				x = 38;
+			}
+			y = 181 + row;
+			picButtons.get(btnIndex).setBounds(x, y, 75, 75);
+			width = 75;
+			height = matchThumb.getHeight();
+			contentPane.add(picButtons.get(btnIndex));
+			btnIndex++;
+		}
 	}
 }
