@@ -1,8 +1,7 @@
 Katch
 =====
 
-Katch is a desktop application that allows users to search for photos on Flickr similar in color to an image of their choosing. I, Hayden Roche,
-am the sole developer of Katch at this time. Katch is written in Java and is still under development.
+Katch is a desktop application that allows users to search for photos on Flickr similar in color to an image of their choosing. Katch is written in Java and is still under development. Developer: Hayden Roche.
 
 To Do
 =====
