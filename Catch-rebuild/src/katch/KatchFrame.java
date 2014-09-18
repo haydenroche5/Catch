@@ -56,7 +56,8 @@ public class KatchFrame extends JFrame {
 	//TODO: the GUI needs to update actionListeners so that when the page is changed, the URLs for each button
 	//reflect the image icon they hold. Right now these aren't being updated properly. Also need to build in a
 	//gallery feature that brings the image up to "full resolution"* when clicked to the right of the thumbnail 
-	//gallery.
+	//gallery. Currently, we also can't Katch again without causing an error (and not removing all the old icons). 
+	//We have to shut down the program if we want to Katch a second time.
 	//*=the method for creating flickr URLs compresses the image resolution.
 
 	public KatchFrame() {
