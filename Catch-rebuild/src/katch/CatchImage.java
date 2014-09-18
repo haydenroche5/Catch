@@ -20,6 +20,7 @@ public class CatchImage {
 	}
 	
 	//deprecated
+	//this is an old means of processing images that computed raw averages of the R, G, and B values of the image
 	private double[] processImage() throws IOException {
 		BufferedImage seedImage = ImageIO.read(imageUrl);
 		height = seedImage.getHeight();
@@ -46,6 +47,7 @@ public class CatchImage {
 		return rgbArray;
 	}
 
+	//this is the currently used method for segregating image into particular color schemes
 	private int[] calculateColorModes() throws IOException {
 		BufferedImage seedImage = ImageIO.read(imageUrl);
 		height = seedImage.getHeight();
@@ -91,6 +93,8 @@ public class CatchImage {
 		//white = 16, black = 17
 
 		int[] counts = new int[colorBounds.size() + 2];
+		
+		//TODO: this needs to be generalized so that the skip increases generically depending on pixel count
 		skip = 2;
 		if(totalPix > 640000) {
 			skip = 3;
@@ -103,7 +107,11 @@ public class CatchImage {
 				int blue = color.getBlue();
 				float[] hsb = new float[3];
 				Color.RGBtoHSB(red, green, blue, hsb);
+				//the hsb values are returned as fractions that need to be converted to be multiplied by some
+				//constant factor to get their "true" value
+				//hue is measured in degrees
 				hsb[0] = hsb[0] * 360;
+				//saturation and brightness are both percentages
 				hsb[1] = hsb[1] * 100;
 				hsb[2] = hsb[2] * 100;
 				boolean foundIt = false;
@@ -126,7 +134,8 @@ public class CatchImage {
 						}
 					}
 				}
-				//red has to be checked for separately
+				//red has to be checked for separately because it crosses the boundary between the high end
+				//and low end of hues (i.e. high end = ~360; low end = ~0)
 				if(!foundIt && ((redHues[0] <= hsb[0]) || (hsb[0] <= redHues[1]))) {
 					counts[colorBounds.size() - 1]++;
 					foundIt = true;
@@ -137,6 +146,7 @@ public class CatchImage {
 	}
 
 	//deprecated
+	//this is another older method that used standard deviation to try to find matches
 	public double[] calculateStandDev(double[] seedAverages) throws IOException {
 		BufferedImage seedImage = ImageIO.read(this.imageUrl);
 		height = seedImage.getHeight();
@@ -164,6 +174,7 @@ public class CatchImage {
 		return standDevs;
 	}
 
+	//short exhaustive method for finding the maximum value of the modes array
 	public int findMax(int[] modes) throws IOException {
 		int max = 0;
 		int indexOfMax = 0;
@@ -182,6 +193,7 @@ public class CatchImage {
 		return indexOfMax;
 	}
 
+	//if two images have the same dominant color scheme (i.e. the same color mode) then it's a match!
 	public boolean compareImages(CatchImage otherPhoto) throws IOException {
 		boolean isMatch = false;
 		if (this.findMax(this.calculateColorModes()) == otherPhoto.findMax(otherPhoto.calculateColorModes())) {

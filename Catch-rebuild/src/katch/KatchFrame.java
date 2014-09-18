@@ -15,6 +15,7 @@ import javax.imageio.ImageIO;
 import javax.swing.DefaultListModel;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -51,23 +52,19 @@ public class KatchFrame extends JFrame {
 			}
 		});
 	}
+	
+	//TODO: the GUI needs to update actionListeners so that when the page is changed, the URLs for each button
+	//reflect the image icon they hold. Right now these aren't being updated properly. Also need to build in a
+	//gallery feature that brings the image up to "full resolution"* when clicked to the right of the thumbnail 
+	//gallery.
+	//*=the method for creating flickr URLs compresses the image resolution.
 
 	public KatchFrame() {
 		picButtons = new ArrayList<JButton>();
 		for(int i = 0; i < 25; i++) {
 			JButton thumbButton = new JButton();
 			picButtons.add(thumbButton);
-			picButtons.get(0).addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {
-					selectedMatchField.setText(matchUrl.toString());
-					Graphics matchGraphics = match.getGraphics();
-					matchGraphics.drawImage(match, match.getWidth(), match.getHeight(), displayPanel);  
-					contentPane.validate();
-					contentPane.repaint();
-				}
-			});
 		}
-
 		startingIndex = 0;
 		pageNumber = 1;
 		matchedUrls = new DefaultListModel<URL>();
@@ -81,7 +78,7 @@ public class KatchFrame extends JFrame {
 		displayPanel = new JPanel();
 		displayPanel.setBounds(495, 35, 600, 600);
 		contentPane.add(displayPanel);
-		
+
 		seedField = new JTextField();
 		seedField.setBounds(6, 35, 438, 28);
 		contentPane.add(seedField);
@@ -121,12 +118,12 @@ public class KatchFrame extends JFrame {
 		selectedMatchField.setColumns(10);
 		selectedMatchField.setBounds(6, 149, 438, 28);
 		contentPane.add(selectedMatchField);
-		
+
 		JButton btnPrevPage = new JButton("Previous page");
 		btnPrevPage.setBounds(86, 607, 117, 29);
 		contentPane.add(btnPrevPage);
 		btnPrevPage.setVisible(false);
-		
+
 		JButton btnNextPage = new JButton("Next page");
 		btnNextPage.setBounds(246, 607, 117, 29);
 		contentPane.add(btnNextPage);
@@ -240,6 +237,9 @@ public class KatchFrame extends JFrame {
 	}
 
 	public void createThumbs(int startingIndex, int finalIndex) throws IOException {
+		for(int i = 0; i < picButtons.size(); i++) {
+			removeListeners(picButtons.get(i));
+		}
 		int width = 0;
 		int height = 0;
 		int x = 38;
@@ -262,6 +262,24 @@ public class KatchFrame extends JFrame {
 			height = matchThumb.getHeight();
 			contentPane.add(picButtons.get(btnIndex));
 			btnIndex++;
+		}
+		for(int i = 0; i < 25; i++) {
+			picButtons.get(0).addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					selectedMatchField.setText(matchUrl.toString());
+					Graphics matchGraphics = match.getGraphics();
+					matchGraphics.drawImage(match, match.getWidth(), match.getHeight(), displayPanel);  
+					contentPane.validate();
+					contentPane.repaint();
+				}
+			});
+		}
+	}
+
+	public void removeListeners(JButton button) {
+		ActionListener[] listeners = button.getActionListeners();
+		for(ActionListener aListener : listeners) {
+			button.removeActionListener(aListener);
 		}
 	}
 }
