@@ -13,6 +13,7 @@ import java.util.ArrayList;
 
 import javax.imageio.ImageIO;
 import javax.swing.DefaultListModel;
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -27,6 +28,7 @@ import javax.swing.border.EmptyBorder;
 import net.coobird.thumbnailator.Thumbnailator;
 
 public class KatchFrame extends JFrame {
+	private JLabel matchUrlLabel;
 	private JPanel contentPane;
 	private JTextField seedField;
 	private JTextField userField;
@@ -37,8 +39,7 @@ public class KatchFrame extends JFrame {
 	private ArrayList<JButton> picButtons;
 	private int pageNumber;
 	private int startingIndex;
-	private URL matchUrl;
-	private BufferedImage match;
+	private int btnIndex;
 
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
@@ -53,13 +54,6 @@ public class KatchFrame extends JFrame {
 		});
 	}
 	
-	//TODO: the GUI needs to update actionListeners so that when the page is changed, the URLs for each button
-	//reflect the image icon they hold. Right now these aren't being updated properly. Also need to build in a
-	//gallery feature that brings the image up to "full resolution"* when clicked to the right of the thumbnail 
-	//gallery. Currently, we also can't Katch again without causing an error (and not removing all the old icons). 
-	//We have to shut down the program if we want to Katch a second time.
-	//*=the method for creating flickr URLs compresses the image resolution.
-
 	public KatchFrame() {
 		picButtons = new ArrayList<JButton>();
 		for(int i = 0; i < 25; i++) {
@@ -77,8 +71,13 @@ public class KatchFrame extends JFrame {
 		contentPane.setLayout(null);
 
 		displayPanel = new JPanel();
-		displayPanel.setBounds(495, 35, 600, 600);
 		contentPane.add(displayPanel);
+
+		selectedMatchField = new JTextField();
+		selectedMatchField.setColumns(10);
+		contentPane.add(selectedMatchField);
+		selectedMatchField.setVisible(false);
+		selectedMatchField.setEditable(false);
 
 		seedField = new JTextField();
 		seedField.setBounds(6, 35, 438, 28);
@@ -107,18 +106,13 @@ public class KatchFrame extends JFrame {
 		lblSearch.setBounds(313, 73, 61, 16);
 		contentPane.add(lblSearch);
 
-		JLabel selectedMatch = new JLabel("Selected Match");
-		selectedMatch.setBounds(9, 131, 100, 16);
-		contentPane.add(selectedMatch);
+		matchUrlLabel = new JLabel("URL");
+		contentPane.add(matchUrlLabel);
+		matchUrlLabel.setVisible(false);
 
 		JLabel lblOr = new JLabel("OR");
 		lblOr.setBounds(207, 97, 61, 16);
 		contentPane.add(lblOr);
-
-		selectedMatchField = new JTextField();
-		selectedMatchField.setColumns(10);
-		selectedMatchField.setBounds(6, 149, 438, 28);
-		contentPane.add(selectedMatchField);
 
 		JButton btnPrevPage = new JButton("Previous page");
 		btnPrevPage.setBounds(86, 607, 117, 29);
@@ -134,8 +128,14 @@ public class KatchFrame extends JFrame {
 		btnKatch.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				for(int i = 0; i < picButtons.size(); i++) {
+					ActionListener[] listeners = picButtons.get(i).getActionListeners();
+					if(listeners.length != 0) {
+						picButtons.get(i).removeActionListener(listeners[0]);
+					}
 					contentPane.remove(picButtons.get(i));
 				}
+				displayPanel.removeAll();
+				selectedMatchField.setVisible(false);
 				matchedUrls.clear();
 				String search = userField.getText();
 				boolean isUser = true;
@@ -158,7 +158,7 @@ public class KatchFrame extends JFrame {
 
 						ArrayList<CatchImage> compPhotos = new ArrayList<CatchImage>();
 						for (int i = 0; i < compUrls.size(); i++) {
-							CatchImage photoToCompare = new CatchImage((String)compUrls.get(i));
+							CatchImage photoToCompare = new CatchImage(compUrls.get(i));
 							compPhotos.add(photoToCompare);
 						}
 						//REMOVE this variable after testing complete
@@ -167,7 +167,7 @@ public class KatchFrame extends JFrame {
 							boolean theyMatch = seedImage.compareImages(compPhotos.get(i));
 							if (theyMatch) {
 								count++;
-								matchedUrls.addElement(((CatchImage)compPhotos.get(i)).getImageURL());
+								matchedUrls.addElement(compPhotos.get(i).getImageURL());
 								System.out.println("Hey, a match! (" + count + ")");
 							}
 							else {
@@ -178,28 +178,13 @@ public class KatchFrame extends JFrame {
 						e1.printStackTrace();
 					}
 				}
-				btnPrevPage.addActionListener(new ActionListener() {
-					public void actionPerformed(ActionEvent e) {
-						btnNextPage.setVisible(true);
-						int finalIndex = 0;
-						startingIndex -= 25;
-						pageNumber--;
-						for(int i = 0; i < picButtons.size(); i++) {
-							picButtons.get(i).setIcon(null);
-						}
-						finalIndex = pageNumber * 25;
-						if(pageNumber == 1) {
-							btnPrevPage.setVisible(false);
-						}
-						try {
-							createThumbs(startingIndex, finalIndex);
-						} catch (IOException e1) {
-							e1.printStackTrace();
-						}
-					}
-				});
 				try {
-					createThumbs(0, 25);
+					if(matchedUrls.size() < 25) {
+						createThumbs(0, matchedUrls.size());
+					}
+					else {
+						createThumbs(0, 25);
+					}		
 				} catch (IOException e2) {
 					e2.printStackTrace();
 				}
@@ -213,6 +198,10 @@ public class KatchFrame extends JFrame {
 							btnPrevPage.setVisible(true);
 							for(int i = 0; i < picButtons.size(); i++) {
 								picButtons.get(i).setIcon(null);
+								ActionListener[] listeners = picButtons.get(i).getActionListeners();
+								if(listeners.length != 0) {
+									picButtons.get(i).removeActionListener(listeners[0]);
+								}
 							}
 							if((pageNumber * 25) > matchedUrls.size()) {
 								finalIndex = matchedUrls.size();
@@ -229,6 +218,30 @@ public class KatchFrame extends JFrame {
 						}
 					});
 				}
+				btnPrevPage.addActionListener(new ActionListener() {
+					public void actionPerformed(ActionEvent e) {
+						btnNextPage.setVisible(true);
+						int finalIndex = 0;
+						startingIndex -= 25;
+						pageNumber--;
+						for(int i = 0; i < picButtons.size(); i++) {
+							picButtons.get(i).setIcon(null);
+							ActionListener[] listeners = picButtons.get(i).getActionListeners();
+							if(listeners.length != 0) {
+								picButtons.get(i).removeActionListener(listeners[0]);
+							}
+						}
+						finalIndex = pageNumber * 25;
+						if(pageNumber == 1) {
+							btnPrevPage.setVisible(false);
+						}
+						try {
+							createThumbs(startingIndex, finalIndex);
+						} catch (IOException e1) {
+							e1.printStackTrace();
+						}
+					}
+				});
 				contentPane.validate();
 				contentPane.repaint();
 			}
@@ -238,18 +251,15 @@ public class KatchFrame extends JFrame {
 	}
 
 	public void createThumbs(int startingIndex, int finalIndex) throws IOException {
-		for(int i = 0; i < picButtons.size(); i++) {
-			removeListeners(picButtons.get(i));
-		}
 		int width = 0;
 		int height = 0;
 		int x = 38;
 		int y = 0;
 		int row = 0;
-		int btnIndex = 0;
+		btnIndex = 0;
 		for(int i = startingIndex; i < finalIndex; i++) {
-			matchUrl = matchedUrls.get(i);
-			match = ImageIO.read(matchUrl);
+			URL matchUrl = matchedUrls.get(i);
+			BufferedImage match = ImageIO.read(matchUrl);
 			BufferedImage matchThumb = Thumbnailator.createThumbnail(match, 55, 55);
 			picButtons.get(btnIndex).setIcon(new ImageIcon(matchThumb));
 			x += width;
@@ -257,30 +267,29 @@ public class KatchFrame extends JFrame {
 				row += 85;
 				x = 38;
 			}
-			y = 181 + row;
+			y = 161 + row;
 			picButtons.get(btnIndex).setBounds(x, y, 75, 75);
 			width = 75;
 			height = matchThumb.getHeight();
 			contentPane.add(picButtons.get(btnIndex));
-			btnIndex++;
-		}
-		for(int i = 0; i < 25; i++) {
-			picButtons.get(0).addActionListener(new ActionListener() {
+			picButtons.get(btnIndex).addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
+					displayPanel.removeAll();
 					selectedMatchField.setText(matchUrl.toString());
-					Graphics matchGraphics = match.getGraphics();
-					matchGraphics.drawImage(match, match.getWidth(), match.getHeight(), displayPanel);  
+					ImageIcon bigImageIcon = new ImageIcon(match);
+					JLabel bigImageLabel = new JLabel(bigImageIcon);
+					displayPanel.setBounds(495, 35, bigImageIcon.getIconWidth(), bigImageIcon.getIconHeight());
+					displayPanel.add(bigImageLabel);
+					selectedMatchField.setBounds(490, 35+bigImageIcon.getIconHeight()+33, 458, 28);
+					selectedMatchField.setVisible(true);
+					matchUrlLabel.setBounds(492, 35+bigImageIcon.getIconHeight()+10, 100, 16);
+					matchUrlLabel.setVisible(true);
 					contentPane.validate();
 					contentPane.repaint();
 				}
 			});
+			btnIndex++;
 		}
-	}
 
-	public void removeListeners(JButton button) {
-		ActionListener[] listeners = button.getActionListeners();
-		for(ActionListener aListener : listeners) {
-			button.removeActionListener(aListener);
-		}
 	}
 }

@@ -18,7 +18,7 @@ public class CatchImage {
 	public CatchImage(String url) throws MalformedURLException {
 		this.imageUrl = new URL(url);
 	}
-	
+
 	//deprecated
 	//this is an old means of processing images that computed raw averages of the R, G, and B values of the image
 	private double[] processImage() throws IOException {
@@ -93,7 +93,7 @@ public class CatchImage {
 		//white = 16, black = 17
 
 		int[] counts = new int[colorBounds.size() + 2];
-		
+
 		//TODO: this needs to be generalized so that the skip increases generically depending on pixel count
 		skip = 2;
 		if(totalPix > 640000) {
@@ -184,19 +184,33 @@ public class CatchImage {
 				indexOfMax = i;
 			}
 		}
-		//if the dominant color is pure white (saturation of 0, brightness of 100), use the second most frequent color
-		//as the max
-		if(indexOfMax == 16) {
-			modes[16] = 0;
-			indexOfMax = findMax(modes);
-		}
 		return indexOfMax;
 	}
 
 	//if two images have the same dominant color scheme (i.e. the same color mode) then it's a match!
 	public boolean compareImages(CatchImage otherPhoto) throws IOException {
 		boolean isMatch = false;
-		if (this.findMax(this.calculateColorModes()) == otherPhoto.findMax(otherPhoto.calculateColorModes())) {
+		int matchRequirement = 0;
+		int[] seedModes = this.calculateColorModes();
+		int[] otherModes = otherPhoto.calculateColorModes();
+		int[] topThreeSeed = new int[3];
+		int[] topThreeOther = new int[3];
+		for(int i = 0; i < 3; i++) {
+			topThreeSeed[i] = this.findMax(seedModes);
+			topThreeOther[i] = this.findMax(otherModes);
+			seedModes[topThreeSeed[i]] = 0;
+			otherModes[topThreeSeed[i]] = 0;
+		}
+		if (topThreeSeed[0] == topThreeOther[0] || topThreeSeed[0] == topThreeOther[1] || topThreeSeed[0] == topThreeOther[2]) {
+			matchRequirement++;
+		}
+		if (topThreeSeed[1] == topThreeOther[0] || topThreeSeed[1] == topThreeOther[1] || topThreeSeed[1] == topThreeOther[2]) {
+			matchRequirement++;
+		}
+		if (topThreeSeed[2] == topThreeOther[0] || topThreeSeed[2] == topThreeOther[1] || topThreeSeed[2] == topThreeOther[2]) {
+			matchRequirement++;
+		}
+		if(matchRequirement >= 1) {
 			isMatch = true;
 		}
 		return isMatch;
